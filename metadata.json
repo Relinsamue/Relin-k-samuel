@@ -1,0 +1,6 @@
+{
+  "name": "CreatorPro",
+  "description": "An AI-powered creator tools master-suite featuring an AI Caption Generator, YouTube Script Writer, Social Media Post Generator, AI Thumbnail Mockup Engine, and SEO-friendly AI Blog Writer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
