@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -84,6 +86,7 @@ fun CreatorAppUi(viewModel: MainMenuViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val currentTool by viewModel.currentTool.collectAsStateWithLifecycle()
+    val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
     val generationState by viewModel.generationState.collectAsStateWithLifecycle()
     val historyItems by viewModel.historyItems.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
@@ -326,7 +329,9 @@ fun CreatorAppUi(viewModel: MainMenuViewModel, modifier: Modifier = Modifier) {
                         scope.launch {
                             drawerState.open()
                         }
-                    }
+                    },
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = { viewModel.toggleTheme() }
                 )
             },
             bottomBar = {
@@ -365,6 +370,23 @@ fun CreatorAppUi(viewModel: MainMenuViewModel, modifier: Modifier = Modifier) {
                         icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                         label = { Text("Profile", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) }
                     )
+                }
+            },
+            floatingActionButton = {
+                if (currentTool == ToolType.HOME) {
+                    FloatingActionButton(
+                        onClick = { viewModel.selectTool(ToolType.ASSISTANT) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White,
+                        shape = CircleShape,
+                        modifier = Modifier.padding(bottom = 8.dp, end = 4.dp).testTag("floating_ai_assistant_fab")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "AI Assistant",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             },
             containerColor = MaterialTheme.colorScheme.background,
@@ -650,7 +672,9 @@ fun CreatorTopAppBar(
     currentTool: ToolType,
     isApiKeyConfigured: Boolean,
     onInfoClick: () -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -745,6 +769,20 @@ fun CreatorTopAppBar(
                                 color = if (isApiKeyConfigured) Color(0xFF22C55E) else Color(0xFFEF4444)
                             )
                         }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = onToggleTheme,
+                        modifier = Modifier
+                            .testTag("theme_toggle_button")
+                            .size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = "Toggle Dark/Light Mode",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     
@@ -2628,6 +2666,7 @@ fun KeyConfigurationInfoView(isApiKeyConfigured: Boolean, onBackClick: () -> Uni
 
 @Composable
 fun ContentAnalyticsScreen(historyItems: List<com.example.data.db.SavedCreation>) {
+    val context = LocalContext.current
     var activeMetricTab by remember { mutableStateOf(0) } // 0: Reach, 1: Engagement, 2: Discovery
     var selectedDayIndex by remember { mutableStateOf(4) } // Default to Fri (index 4)
 
@@ -2691,6 +2730,69 @@ fun ContentAnalyticsScreen(historyItems: List<com.example.data.db.SavedCreation>
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Button(
+                            onClick = {
+                                val reportContent = buildString {
+                                    append("## CONTENT PERFORMANCE REPORT\n")
+                                    append("Generated by CreatorPro Studio\n\n")
+                                    
+                                    append("### REPORT METRICS OVERVIEW\n")
+                                    append("- Total Generated Assets: $totalPieces pieces in creator history database.\n")
+                                    append("- Estimated Monthly Reach: $formattedReach+ total impressions/views projected.\n")
+                                    append("- Content Quality Grade: Grade A+ (Excellent Performance Indicator)\n")
+                                    append("\n")
+                                    
+                                    append("### WEEKLY TARGET INDICES FORECAST\n")
+                                    days.forEachIndexed { index, day ->
+                                        val reachVal = reachData[index].toInt()
+                                        val engVal = engagementData[index]
+                                        val discVal = discoveryData[index]
+                                        append("- $day Performance - Reach: ${String.format("%,d", reachVal)} views | Engagement: $engVal% | Discovery: $discVal index points\n")
+                                    }
+                                    append("\n")
+                                    
+                                    append("### FORMAT SEGMENT DISTRIBUTION\n")
+                                    append("- YouTube High-Retention Scripts: $scriptCount pieces completed (1.85x multiplier)\n")
+                                    append("- SEO-Optimized AI Articles (Blogs): $blogCount articles completed (1.54x multiplier)\n")
+                                    append("- Social Media Post Drafts: $postCount drafts completed (1.32x multiplier)\n")
+                                    append("- AI Caption & Hashtag lists: $captionCount tag lists completed (1.15x multiplier)\n")
+                                    append("- Custom Thumbnail Assets: $thumbnailCount assets designed (High CTR probability)\n")
+                                    append("\n")
+                                    
+                                    if (historyItems.isNotEmpty()) {
+                                        append("### RECENT CREATIVE ASSETS PRODUCED\n")
+                                        historyItems.take(5).forEach { item ->
+                                            append("- ${item.title} (${item.toolType}) - Length: ${item.outputContent.length} chars\n")
+                                        }
+                                        append("\n")
+                                    }
+                                    
+                                    append("### CORE ENGINE STRATEGIC TIPS\n")
+                                    append("- YouTube Script Optimization: Keep introductory hooks under 12 seconds with dynamic thumbnail representations.\n")
+                                    append("- SEO AI Articles Search Indexing: Include at least 3 high-intent search keywords per article draft.\n")
+                                    append("- High Conversion Card Layouts: Leverage left-aligned card text overlays to orient reading path scanning.\n")
+                                }
+                                PdfExporter.exportToPdf(context, "Content Performance Report", reportContent)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("export_pdf_button")
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.PictureAsPdf,
+                                    contentDescription = "PDF Icon",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Export Beautiful PDF", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
                     }
                     Box(
                         modifier = Modifier
@@ -3329,6 +3431,108 @@ fun CreatorProLogo(modifier: Modifier = Modifier) {
 }
 
 @Composable
+fun AICreatorHologramIllustration(modifier: Modifier = Modifier) {
+    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "hologram")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(10000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+    val scalePulse by infiniteTransition.animateFloat(
+        initialValue = 0.92f,
+        targetValue = 1.08f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(2200, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+
+    Box(
+        modifier = modifier.size(100.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val canvasCenter = center
+            val radius = size.minDimension / 2.3f
+
+            // Pulse glowing radial aurora
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF00C2FF).copy(alpha = 0.35f * scalePulse),
+                        Color(0xFF6C3BFF).copy(alpha = 0.1f * scalePulse),
+                        Color.Transparent
+                    ),
+                    center = canvasCenter,
+                    radius = radius * 1.5f
+                ),
+                radius = radius * 1.5f
+            )
+
+            // Outer Orbit lines
+            rotate(degrees = rotation, pivot = canvasCenter) {
+                drawCircle(
+                    color = Color(0xFF00C2FF).copy(alpha = 0.6f),
+                    radius = radius,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = 1.5f.dp.toPx(),
+                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
+                    )
+                )
+                // Draw Orbit nodes
+                drawCircle(
+                    color = Color(0xFFFF4D8D),
+                    radius = 6.dp.toPx(),
+                    center = Offset(canvasCenter.x + radius, canvasCenter.y)
+                )
+                drawCircle(
+                    color = Color(0xFF00C2FF),
+                    radius = 4.dp.toPx(),
+                    center = Offset(canvasCenter.x, canvasCenter.y - radius)
+                )
+            }
+
+            // Inner orbit reverse rotation
+            rotate(degrees = -rotation * 1.6f, pivot = canvasCenter) {
+                drawCircle(
+                    color = Color(0xFFFF4D8D).copy(alpha = 0.4f),
+                    radius = radius * 0.7f,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = 1.dp.toPx(),
+                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
+                    )
+                )
+                drawCircle(
+                    color = Color(0xFF6C3BFF),
+                    radius = 5.dp.toPx(),
+                    center = Offset(canvasCenter.x - radius * 0.7f, canvasCenter.y)
+                )
+            }
+
+            // Core neon AI hub
+            drawCircle(
+                brush = Brush.linearGradient(
+                    colors = listOf(Color(0xFF6C3BFF), Color(0xFFFF4D8D))
+                ),
+                radius = radius * 0.4f
+            )
+        }
+
+        Icon(
+            imageVector = Icons.Default.AutoAwesome,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Composable
 fun CreatorProHomeScreen(
     viewModel: MainMenuViewModel,
     historyItems: List<com.example.data.db.SavedCreation>,
@@ -3349,11 +3553,12 @@ fun CreatorProHomeScreen(
     var isGeneratingHashtags by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
+    val isDark = isSystemInDarkTheme()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         LazyColumn(
             modifier = Modifier
@@ -3362,155 +3567,276 @@ fun CreatorProHomeScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // 1. Welcome Section
+            // 1. Welcome Section & Personalized Title
             item {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+                        .padding(bottom = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Hello, Relin! 👋",
-                        style = TextStyle(
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF1E293B)
+                    Column {
+                        Text(
+                            text = "Hello, Relin! 👋",
+                            style = TextStyle(
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
                         )
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Create amazing content with AI.",
-                        style = TextStyle(
-                            fontSize = 15.sp,
-                            color = Color(0xFF64748B),
-                            fontWeight = FontWeight.Medium
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "What will you create today?",
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
                         )
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-                    
-                    // Search Bar
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search content ideas, tools and more...", color = Color(0xFF94A3B8)) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color(0xFF64748B)) },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = {
-                                    if (searchQuery.isNotBlank()) {
-                                        isSearchingIdeas = true
-                                        showIdeaResults = true
-                                        scope.launch {
-                                            val prompt = "Generate 3 highly descriptive, click-worthy creator ideas, 3 visual concepts and 3 core tips about: $searchQuery. Make the response extremely actionable, concise, well-formatted, and visually beautiful using bullet points."
-                                            val systemPrompt = "You are an elite Creator Strategist. Generate high engagement digital asset hooks."
-                                            val result = RetrofitClient.generate(prompt, systemPrompt)
-                                            isSearchingIdeas = false
-                                            ideaResultsText = result
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(Color(0xFF8B5CF6), Color(0xFF3B82F6))
-                                        )
-                                    )
-                                    .size(32.dp)
-                            ) {
-                                Icon(Icons.Default.AutoAwesome, contentDescription = "Query AI", tint = Color.White, modifier = Modifier.size(16.dp))
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("home_search_bar"),
-                        shape = RoundedCornerShape(24.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFFF8FAFC),
-                            unfocusedContainerColor = Color(0xFFF8FAFC),
-                            focusedBorderColor = Color(0xFFE2E8F0),
-                            unfocusedBorderColor = Color(0xFFE2E8F0)
-                        )
-                    )
+                    }
                 }
             }
 
-            // 2. Quick Actions
+            // Search Bar with AutoAwesome strategist action
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search content ideas, trends, hacks...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), fontSize = 14.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                if (searchQuery.isNotBlank()) {
+                                    isSearchingIdeas = true
+                                    showIdeaResults = true
+                                    scope.launch {
+                                        val prompt = "Generate 3 highly descriptive, click-worthy creator ideas, 3 visual concepts and 3 core tips about: $searchQuery. Make the response extremely actionable, concise, well-formatted, and visually beautiful using bullet points."
+                                        val systemPrompt = "You are an elite Creator Strategist. Generate high engagement digital asset hooks."
+                                        val result = RetrofitClient.generate(prompt, systemPrompt)
+                                        isSearchingIdeas = false
+                                        ideaResultsText = result
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(Color(0xFF6C3BFF), Color(0xFFFF4D8D))
+                                    )
+                                )
+                                .size(32.dp)
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = "Query AI", tint = Color.White, modifier = Modifier.size(14.dp))
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("home_search_bar"),
+                    shape = RoundedCornerShape(20.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
+                )
+            }
+
+            // 2. Large Interactive Gradient Hero Banner
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(Color(0xFF6C3BFF), Color(0xFFFF4D8D), Color(0xFF00C2FF))
+                                )
+                            )
+                            .padding(20.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.weight(1.2f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(30.dp))
+                                        .background(Color.White.copy(alpha = 0.2f))
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "⚡ CREATORPRO STUDIO",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White,
+                                        letterSpacing = 1.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Create Viral Content\nwith AI Power",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White,
+                                    lineHeight = 25.sp
+                                )
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Button(
+                                    onClick = { onSelectTool(ToolType.CAPTION) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "Start Creating", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6C3BFF))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color(0xFF6C3BFF), modifier = Modifier.size(14.dp))
+                                    }
+                                }
+                            }
+                            AICreatorHologramIllustration(
+                                modifier = Modifier
+                                    .weight(0.8f)
+                                    .align(Alignment.CenterVertically)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 3. Quick Tools Grid of Colorful Cards (6 canonical tools requested)
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Quick Actions",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1E293B)
-                        )
-                        Text(
-                            text = "See All",
-                            fontSize = 13.sp,
-                            color = Color(0xFF8B5CF6),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { onSelectTool(ToolType.CAPTION) }
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Horizontally Scrollable Grid of beautiful quick cards
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                    ) {
-                        // 1. Generate Reel Script
-                        QuickActionCard(
-                            title = "Generate\nReel Script",
-                            desc = "Create viral reel scripts instantly.",
-                            icon = Icons.Default.SmartDisplay,
-                            iconBg = Color(0xFFF3E8FF),
-                            iconColor = Color(0xFF8B5CF6),
-                            onClick = { onSelectTool(ToolType.SCRIPT) }
-                        )
-                        
-                        // 2. Generate Captions
-                        QuickActionCard(
-                            title = "Generate\nCaptions",
-                            desc = "Al-powered captions for any platform.",
-                            icon = Icons.Default.Edit,
-                            iconBg = Color(0xFFFEE2E2),
-                            iconColor = Color(0xFFEF4444),
-                            onClick = { onSelectTool(ToolType.CAPTION) }
-                        )
-                        
-                        // 3. Generate Hashtags
-                        QuickActionCard(
-                            title = "Generate\nHashtags",
-                            desc = "Trending hashtags for maximum reach.",
-                            icon = Icons.Default.Label, // represents hashtag layout/trending activity
-                            iconBg = Color(0xFFECFDF5),
-                            iconColor = Color(0xFF10B981),
-                            onClick = { showHashtagDialog = true }
-                        )
-                        
-                        // 4. Thumbnail Creator
-                        QuickActionCard(
-                            title = "Thumbnail\nCreator",
-                            desc = "Create eye-catching thumbnails.",
-                            icon = Icons.Default.Brush,
-                            iconBg = Color(0xFFEFF6FF),
-                            iconColor = Color(0xFF3B82F6),
-                            onClick = { onSelectTool(ToolType.THUMBNAIL) }
-                        )
+                    Text(
+                        text = "Quick Tools",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            // 🎬 Reel Script
+                            QuickActionCard(
+                                title = "🎬 Reel Script",
+                                desc = "Generate high-retention structured reels",
+                                icon = Icons.Default.SmartDisplay,
+                                iconBg = Color(0xFF6C3BFF).copy(alpha = 0.12f),
+                                iconColor = Color(0xFF6C3BFF),
+                                onClick = { onSelectTool(ToolType.SCRIPT) }
+                            )
+
+                            // 🏷️ Hashtag Assistant
+                            QuickActionCard(
+                                title = "🏷️ Hashtags",
+                                desc = "SEO tags optimized for real reach",
+                                icon = Icons.Default.Label,
+                                iconBg = Color(0xFF00C2FF).copy(alpha = 0.12f),
+                                iconColor = Color(0xFF00C2FF),
+                                onClick = { showHashtagDialog = true }
+                            )
+
+                            // 🎤 Voice Script
+                            QuickActionCard(
+                                title = "🎤 Voice Script",
+                                desc = "Create narrations with hooks & pacing",
+                                icon = Icons.Default.Mic,
+                                iconBg = Color(0xFF6C3BFF).copy(alpha = 0.12f),
+                                iconColor = Color(0xFF6C3BFF),
+                                onClick = {
+                                    viewModel.scriptTopic.value = "Voiceover narration script"
+                                    onSelectTool(ToolType.SCRIPT)
+                                }
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            // ✍️ Caption Generator
+                            QuickActionCard(
+                                title = "✍️ Captions",
+                                desc = "Tailored social captions that convert",
+                                icon = Icons.Default.Edit,
+                                iconBg = Color(0xFFFF4D8D).copy(alpha = 0.12f),
+                                iconColor = Color(0xFFFF4D8D),
+                                onClick = { onSelectTool(ToolType.CAPTION) }
+                            )
+
+                            // 🖼️ Thumbnail Maker
+                            QuickActionCard(
+                                title = "🖼️ Thumbnail Maker",
+                                desc = "Beautiful Canvas ideas & color specs",
+                                icon = Icons.Default.Brush,
+                                iconBg = Color(0xFF00C2FF).copy(alpha = 0.12f),
+                                iconColor = Color(0xFF006874),
+                                onClick = { onSelectTool(ToolType.THUMBNAIL) }
+                            )
+
+                            // 📈 Trend Analyzer
+                            QuickActionCard(
+                                title = "📈 Trend Analyzer",
+                                desc = "Interactive analytics & metrics audit",
+                                icon = Icons.Default.TrendingUp,
+                                iconBg = Color(0xFFFF4D8D).copy(alpha = 0.12f),
+                                iconColor = Color(0xFFFF4D8D),
+                                onClick = { onSelectTool(ToolType.ANALYTICS) }
+                            )
+                        }
                     }
                 }
             }
 
-            // 3. Trending Ideas (Hot, scrollable row or list)
+            // 4. AI Strategic Chat shortcuts
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isDark) 0.15f else 0.35f)
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Brush.linearGradient(listOf(Color(0xFF00C2FF), Color(0xFF6C3BFF)))),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("AI Strategy Widget", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
+                            Text("Fast growth tactics & script formulas.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Button(
+                            onClick = { onSelectTool(ToolType.ASSISTANT) },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                        ) {
+                            Text("Chat", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                }
+            }
+
+            // 5. Trending Section with horizontal scroll cards
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -3522,21 +3848,14 @@ fun CreatorProHomeScreen(
                             Text(text = "🔥", fontSize = 18.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Trending Ideas",
+                                text = "Trending Screenplay Ideas",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1E293B)
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                         }
-                        Text(
-                            text = "View All",
-                            fontSize = 13.sp,
-                            color = Color(0xFF3B82F6),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { onSelectTool(ToolType.ANALYTICS) }
-                        )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -3546,7 +3865,7 @@ fun CreatorProHomeScreen(
                     ) {
                         TrendingIdeaCard(
                             rank = "1",
-                            rankColor = Color(0xFF8B5CF6),
+                            rankColor = Color(0xFF6C3BFF),
                             title = "5 AI Tools Every Creator Needs",
                             statsLabel = "12.5K uses",
                             onClick = {
@@ -3557,7 +3876,7 @@ fun CreatorProHomeScreen(
                         
                         TrendingIdeaCard(
                             rank = "2",
-                            rankColor = Color(0xFFEF4444),
+                            rankColor = Color(0xFFFF4D8D),
                             title = "Instagram Growth Hacks 2026",
                             statsLabel = "9.8K uses",
                             onClick = {
@@ -3568,111 +3887,28 @@ fun CreatorProHomeScreen(
 
                         TrendingIdeaCard(
                             rank = "3",
-                            rankColor = Color(0xFF3B82F6),
-                            title = "Best Side Hustles for Students",
-                            statsLabel = "7.2K uses",
+                            rankColor = Color(0xFF00C2FF),
+                            title = "How to Make Viral Reels",
+                            statsLabel = "8.1K uses",
                             onClick = {
-                                viewModel.blogTopic.value = "Best Side Hustles for Students in college"
-                                onSelectTool(ToolType.BLOG)
-                            }
-                        )
-                    }
-                }
-            }
-
-            // 4. AI Tools Row
-            item {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "AI Tools",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1E293B)
-                        )
-                        Text(
-                            text = "See All",
-                            fontSize = 13.sp,
-                            color = Color(0xFF8B5CF6),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { onSelectTool(ToolType.CAPTION) }
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        VerticalToolItem(
-                            icon = Icons.Default.SmartDisplay,
-                            iconBg = Color(0xFFEEF2F6),
-                            iconColor = Color(0xFF6366F1),
-                            label = "Script Writer",
-                            onClick = { onSelectTool(ToolType.SCRIPT) }
-                        )
-                        VerticalToolItem(
-                            icon = Icons.Default.Edit,
-                            iconBg = Color(0xFFFFEEFA),
-                            iconColor = Color(0xFFEC4899),
-                            label = "Caption Gen",
-                            onClick = { onSelectTool(ToolType.CAPTION) }
-                        )
-                        VerticalToolItem(
-                            icon = Icons.Default.PlayArrow,
-                            iconBg = Color(0xFFFFF7ED),
-                            iconColor = Color(0xFFF97316),
-                            label = "Title Gen",
-                            onClick = {
-                                viewModel.scriptTopic.value = "Top Viral Titles"
+                                viewModel.scriptTopic.value = "How to Make Viral Reels"
                                 onSelectTool(ToolType.SCRIPT)
                             }
                         )
-                        VerticalToolItem(
-                            icon = Icons.Default.TrendingUp,
-                            iconBg = Color(0xFFECFDF5),
-                            iconColor = Color(0xFF10B981),
-                            label = "Trend Analyzer",
-                            onClick = { onSelectTool(ToolType.ANALYTICS) }
-                        )
-                        VerticalToolItem(
-                            icon = Icons.Default.AutoAwesome,
-                            iconBg = Color(0xFFEFF6FF),
-                            iconColor = Color(0xFF3B82F6),
-                            label = "Idea Gen",
-                            onClick = { onSelectTool(ToolType.BLOG) }
-                        )
                     }
                 }
             }
 
-            // 5. Creator Stats Section
+            // 6. Creator Stats Section (Glassmorphic visual styling)
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Creator Stats",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1E293B)
-                        )
-                        Text(
-                            text = "See All",
-                            fontSize = 13.sp,
-                            color = Color(0xFF8B5CF6),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { onSelectTool(ToolType.ANALYTICS) }
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Creator Performance Feed",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Column(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -3683,17 +3919,17 @@ fun CreatorProHomeScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             StatsGridCard(
-                                title = "Total Posts",
-                                valStr = "125",
-                                trendStr = "+12 this week",
-                                trendColor = Color(0xFF10B981),
+                                title = "Total Followers",
+                                valStr = "+2,450",
+                                trendStr = "+320 this week",
+                                trendColor = Color(0xFF16A34A),
                                 modifier = Modifier.weight(1f)
                             )
                             StatsGridCard(
-                                title = "Engagement Rate",
-                                valStr = "8.5%",
-                                trendStr = "+1.2% this week",
-                                trendColor = Color(0xFF10B981),
+                                title = "Organic Reach",
+                                valStr = "150K",
+                                trendStr = "+24.5K this week",
+                                trendColor = Color(0xFF16A34A),
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -3702,17 +3938,17 @@ fun CreatorProHomeScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             StatsGridCard(
-                                title = "Reach",
-                                valStr = "150K",
-                                trendStr = "+24.5K this week",
-                                trendColor = Color(0xFF10B981),
+                                title = "Engagement Rate",
+                                valStr = "8.5%",
+                                trendStr = "+1.2% this week",
+                                trendColor = Color(0xFF16A34A),
                                 modifier = Modifier.weight(1f)
                             )
                             StatsGridCard(
-                                title = "Followers Growth",
-                                valStr = "+2,450",
-                                trendStr = "+320 this week",
-                                trendColor = Color(0xFF10B981),
+                                title = "Content Quality Score",
+                                valStr = "98 / 100",
+                                trendStr = "Rank Excellent 🔥",
+                                trendColor = Color(0xFF6C3BFF),
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -3720,7 +3956,7 @@ fun CreatorProHomeScreen(
                 }
             }
 
-            // 6. Premium Banner
+            // 7. Premium Banner Section
             item {
                 Card(
                     shape = RoundedCornerShape(20.dp),
@@ -3734,7 +3970,7 @@ fun CreatorProHomeScreen(
                             .fillMaxWidth()
                             .background(
                                 Brush.linearGradient(
-                                    listOf(Color(0xFF6F2CF3), Color(0xFF3B82F6))
+                                    listOf(Color(0xFF6C3BFF), Color(0xFFFF4D8D))
                                 )
                             )
                             .padding(20.dp)
@@ -3757,10 +3993,10 @@ fun CreatorProHomeScreen(
                                 }
                                 Spacer(modifier = Modifier.height(10.dp))
                                 
-                                PremiumBullet(text = "Unlimited AI Content")
-                                PremiumBullet(text = "Advanced Analytics")
-                                PremiumBullet(text = "Premium Templates")
-                                PremiumBullet(text = "AI Voice Scripts")
+                                PremiumBullet(text = "Unlimited AI content structures")
+                                PremiumBullet(text = "Advanced viral trend analysis")
+                                PremiumBullet(text = "AI custom prompt modules")
+                                PremiumBullet(text = "Multi-platform social scheduler")
                             }
                             
                             Button(
@@ -3774,7 +4010,7 @@ fun CreatorProHomeScreen(
                                     text = "Upgrade Now",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF6F2CF3)
+                                    color = Color(0xFF6C3BFF)
                                 )
                             }
                         }
@@ -4158,56 +4394,60 @@ fun QuickActionCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     iconBg: Color,
     iconColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-        modifier = Modifier
-            .width(150.dp)
-            .height(180.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF1E293B).copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
+        ),
+        border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.12f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+        modifier = modifier
+            .fillMaxWidth()
             .clickable { onClick() }
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(14.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(iconBg),
-                contentAlignment = Alignment.Center
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconColor,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            
-            Column {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(iconBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
                 Text(
                     text = title,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B),
-                    lineHeight = 18.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = desc,
-                    fontSize = 10.sp,
-                    color = Color(0xFF64748B),
-                    lineHeight = 13.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 16.sp
                 )
             }
+            Text(
+                text = desc,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                lineHeight = 14.sp,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -4327,10 +4567,13 @@ fun StatsGridCard(
     trendColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF1E293B).copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
+        ),
+        border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.12f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
         modifier = modifier
     ) {
         Column(
@@ -4342,14 +4585,14 @@ fun StatsGridCard(
                 text = title,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF64748B)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = valStr,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF0F172A)
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -4363,7 +4606,7 @@ fun StatsGridCard(
                 Text(
                     text = trendStr,
                     fontSize = 10.sp,
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Medium
                 )
             }

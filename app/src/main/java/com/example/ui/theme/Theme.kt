@@ -7,44 +7,46 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Minimalist Dark Color Scheme (Charcoal Slate & Soft Lavenders)
+// Minimalist Dark Color Scheme using Slate dark slate and neon colors
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFFBEC2FF), // Soft Indigo Blue accent
-    onPrimary = Color(0xFF1B226E),
-    primaryContainer = Color(0xFF2C398E),
-    onPrimaryContainer = Color(0xFFDDE1FF),
-    secondary = Color(0xFFCCC2DC),
-    onSecondary = Color(0xFF332D41),
-    tertiary = Color(0xFFEFB8C8),
-    onTertiary = Color(0xFF492532),
-    background = Color(0xFF121115), // Deep dark lavender
-    onBackground = Color(0xFFE6E1E5),
-    surface = Color(0xFF1D1B20), // Dark lilac surface
-    onSurface = Color(0xFFE6E1E5),
-    surfaceVariant = Color(0xFF49454F),
-    onSurfaceVariant = Color(0xFFCAC4D0),
-    outline = Color(0xFF938F99)
+    primary = Color(0xFF9E80FF), // Soft neon purple
+    onPrimary = Color(0xFF1E0066),
+    primaryContainer = Color(0xFF4820CE),
+    onPrimaryContainer = Color(0xFFF0EBFF),
+    secondary = Color(0xFFFF7DA7), // Soft pink
+    onSecondary = Color(0xFF3F0015),
+    secondaryContainer = Color(0xFF991544),
+    onSecondaryContainer = Color(0xFFFFE5EE),
+    tertiary = Color(0xFF33CFFF), // Soft blue
+    onTertiary = Color(0xFF00354D),
+    background = Color(0xFF0F172A), // Charcoal Slate dark background
+    onBackground = Color(0xFFF8F9FC),
+    surface = Color(0xFF1E293B), // Slate dark card surface
+    onSurface = Color(0xFFF8F9FC),
+    surfaceVariant = Color(0xFF334155),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    outline = Color(0xFF475569)
 )
 
-// Minimalist Light Color Scheme (from Tailwind extract: #FBF8FD background, #1C1B1F text, #4355B9 buttons, etc.)
+// Minimalist Light Color Scheme
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF4355B9), // Royal slate blue
+    primary = Color(0xFF6C3BFF), // Deep Purple
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDDE1FF), // Soft periwinkle lilac
-    onPrimaryContainer = Color(0xFF001453), // Dark indigo text
-    secondary = Color(0xFF625B71),
+    primaryContainer = Color(0xFFF0EBFF), // Soft lavender purple
+    onPrimaryContainer = Color(0xFF1E0066),
+    secondary = Color(0xFFFF4D8D), // Hot Pink
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFEADDFF), // Soft lilac badge backing
-    onSecondaryContainer = Color(0xFF21005D), // Dark purple text
-    tertiary = Color(0xFF7D5260),
+    secondaryContainer = Color(0xFFFFE5EE),
+    onSecondaryContainer = Color(0xFF3F0015),
+    tertiary = Color(0xFF00C2FF), // Sky Accent Blue
     onTertiary = Color.White,
-    background = Color(0xFFFBF8FD), // Beautiful light lavender-white
-    onBackground = Color(0xFF1C1B1F), // Dark charcoal
+    background = Color(0xFFF8F9FC), // Slate clean light background
+    onBackground = Color(0xFF0F172A),
     surface = Color.White, // Clean white surface cards
-    onSurface = Color(0xFF1C1B1F),
-    surfaceVariant = Color(0xFFF3EDF7), // Warm lilac elements background
-    onSurfaceVariant = Color(0xFF49454F), // lilac gray subtext
-    outline = Color(0xFFE7E0EC) // Lavender subtle gray borders
+    onSurface = Color(0xFF0F172A),
+    surfaceVariant = Color(0xFFEEF2F6), // Warm grey blue
+    onSurfaceVariant = Color(0xFF64748B),
+    outline = Color(0xFFE2E8F0)
 )
 
 @Composable

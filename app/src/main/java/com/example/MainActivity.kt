@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.screens.CreatorAppUi
@@ -20,10 +21,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         
         setContent {
-            MyApplicationTheme {
-                // Initialize the central creator's view model safely
-                val viewModel: MainMenuViewModel = viewModel()
-                
+            // Initialize the central creator's view model safely
+            val viewModel: MainMenuViewModel = viewModel()
+            val isDarkTheme = viewModel.isDarkTheme.collectAsState().value
+            
+            MyApplicationTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {

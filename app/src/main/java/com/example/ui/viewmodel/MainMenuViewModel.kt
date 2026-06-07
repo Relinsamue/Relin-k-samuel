@@ -55,6 +55,14 @@ class MainMenuViewModel(application: Application) : AndroidViewModel(application
     private val _currentTool = MutableStateFlow(ToolType.HOME)
     val currentTool: StateFlow<ToolType> = _currentTool.asStateFlow()
 
+    // Dark mode setting state
+    private val _isDarkTheme = MutableStateFlow(false)
+    val isDarkTheme: StateFlow<Boolean> = _isDarkTheme.asStateFlow()
+
+    fun toggleTheme() {
+        _isDarkTheme.value = !_isDarkTheme.value
+    }
+
     // Flow of history items from database
     private val _historyItems = MutableStateFlow<List<SavedCreation>>(emptyList())
     val historyItems: StateFlow<List<SavedCreation>> = _historyItems.asStateFlow()
